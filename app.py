@@ -22,11 +22,19 @@ def create_app(config_name=None):
     from routes.filmmakers import filmmakers_bp
     from routes.campaigns import campaigns_bp
     from routes.donations import donations_bp
+    from routes.stripe_routes import stripe_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(filmmakers_bp)
     app.register_blueprint(campaigns_bp)
     app.register_blueprint(donations_bp)
+    app.register_blueprint(stripe_bp)
+
+    @app.route("/api/config")
+    def client_config():
+        return jsonify({
+            "stripe_publishable_key": app.config.get("STRIPE_PUBLISHABLE_KEY", ""),
+        })
 
     # --- Legacy video routes (kept for compatibility) ---
     def generate():
