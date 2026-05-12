@@ -1,0 +1,240 @@
+{
+  "info": {
+    "name": "Indies API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5001" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Filmmaker\",\n  \"email\": \"testfilmmaker@example.com\",\n  \"password\": \"password123\",\n  \"bio\": \"Indie filmmaker from Lagos\",\n  \"nationality\": \"Nigerian\",\n  \"website\": \"https://example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.access_token) {",
+                  "  pm.collectionVariables.set('token', json.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testfilmmaker@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/auth/me",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Updated bio\",\n  \"website\": \"https://newsite.com\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Filmmakers",
+      "item": [
+        {
+          "name": "List Filmmakers",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/filmmakers/"
+          }
+        },
+        {
+          "name": "Get Filmmaker",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/filmmakers/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Campaigns",
+      "item": [
+        {
+          "name": "List Campaigns",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/campaigns/",
+              "query": [
+                { "key": "status", "value": "active", "disabled": true },
+                { "key": "genre", "value": "drama", "disabled": true },
+                { "key": "filmmaker_id", "value": "1", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Campaign",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/campaigns/1"
+          }
+        },
+        {
+          "name": "Create Campaign",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/campaigns/",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My Indie Film\",\n  \"description\": \"A full description of the film project.\",\n  \"short_description\": \"A short pitch.\",\n  \"goal_amount\": 5000,\n  \"genre\": \"drama\",\n  \"tags\": [\"indie\", \"drama\"],\n  \"deadline\": \"2026-12-31T00:00:00\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Campaign",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/campaigns/1",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\",\n  \"title\": \"Updated Title\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Campaign",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/campaigns/1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Post Campaign Update",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/campaigns/1/updates",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"We hit 50%!\",\n  \"body\": \"Excited to share that we've hit the halfway mark.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload Campaign Video",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/campaigns/1/video",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "video", "type": "file", "src": "" }]
+            }
+          }
+        },
+        {
+          "name": "Serve Campaign Video",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/campaigns/videos/<filename>"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Donations",
+      "item": [
+        {
+          "name": "Get Campaign Donations",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/donations/campaign/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stripe",
+      "item": [
+        {
+          "name": "Start Onboarding",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/stripe/onboard",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Check Onboarding Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/stripe/onboard/status",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Create Payment Intent",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/stripe/create-payment-intent",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"campaign_id\": 1,\n  \"amount\": 25,\n  \"donor_email\": \"donor@example.com\",\n  \"donor_name\": \"Jane Doe\",\n  \"message\": \"Keep it up!\",\n  \"is_anonymous\": false\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

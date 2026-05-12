@@ -9,8 +9,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "jwt-secret-change-in-production")
     STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+    STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
     STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
     PLATFORM_FEE_PERCENT = float(os.environ.get("PLATFORM_FEE_PERCENT", "7.0"))
+    FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 
 class DevelopmentConfig(Config):
