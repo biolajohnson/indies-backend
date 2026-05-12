@@ -1,7 +1,16 @@
-from flask import Blueprint, request, jsonify
+import os
+import uuid
+import threading
+from flask import Blueprint, request, jsonify, current_app, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db
 from models import Campaign, CampaignUpdate, Filmmaker
+from transcoding import worker as transcoding_worker
+
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'webm', 'avi'}
+
+def allowed_video(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
 
 campaigns_bp = Blueprint("campaigns", __name__, url_prefix="/api/campaigns")
 
@@ -172,3 +181,66 @@ def post_update(campaign_id):
     db.session.commit()
 
     return jsonify(update.to_dict()), 201
+
+
+@campaigns_bp.route("/<int:campaign_id>/video", methods=["PATCH"])
+@jwt_required()
+def upload_video(campaign_id):
+    filmmaker_id = int(get_jwt_identity())
+    campaign = db.session.get(Campaign, campaign_id)
+
+    if not campaign:
+        return jsonify({"error": "Campaign not found"}), 404
+    if campaign.filmmaker_id != filmmaker_id:
+        return jsonify({"error": "You do not have permission to upload video for this campaign"}), 403
+
+    file = request.files.get("video")
+    if not file:
+        return jsonify({"error": "No video file provided"}), 400
+    if not allowed_video(file.filename):
+        return jsonify({"error": "Unsupported file type. Use mp4, mov, webm, or avi."}), 400
+
+    # Save the raw upload to a temp location — worker deletes it after transcoding.
+    upload_dir = os.path.join(current_app.root_path, "uploads", "videos")
+    os.makedirs(upload_dir, exist_ok=True)
+
+    slug = uuid.uuid4().hex
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    raw_path = os.path.join(upload_dir, f"{slug}_raw.{ext}")
+    hls_dir = os.path.join(upload_dir, slug)
+    file.save(raw_path)
+
+    # Mark processing immediately so the frontend can start polling.
+    campaign.video_url = None
+    campaign.video_status = Campaign.VIDEO_STATUS_PROCESSING
+    db.session.commit()
+
+    # Kick off the transcoding pipeline in a background thread.
+    # The thread needs the Flask app object to push an app context —
+    # current_app is a proxy and can't be passed directly.
+    app = current_app._get_current_object()
+    thread = threading.Thread(
+        target=transcoding_worker.run,
+        args=(app, campaign_id, raw_path, hls_dir),
+        daemon=True,
+    )
+    thread.start()
+
+    return jsonify({"status": Campaign.VIDEO_STATUS_PROCESSING}), 202
+
+
+@campaigns_bp.route("/<int:campaign_id>/video/status", methods=["GET"])
+def video_status(campaign_id):
+    campaign = db.session.get(Campaign, campaign_id)
+    if not campaign:
+        return jsonify({"error": "Campaign not found"}), 404
+    return jsonify({
+        "status": campaign.video_status,
+        "video_url": campaign.video_url,
+    }), 200
+
+
+@campaigns_bp.route("/videos/<path:filename>", methods=["GET"])
+def serve_video(filename):
+    upload_dir = os.path.join(current_app.root_path, "uploads", "videos")
+    return send_from_directory(upload_dir, filename)

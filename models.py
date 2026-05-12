@@ -63,7 +63,13 @@ class Campaign(db.Model):
     short_description = db.Column(db.String(500), nullable=True)
     goal_amount = db.Column(db.Numeric(10, 2), nullable=False)
     current_amount = db.Column(db.Numeric(10, 2), default=0.00, nullable=False)
+    VIDEO_STATUS_PROCESSING = "processing"
+    VIDEO_STATUS_READY = "ready"
+    VIDEO_STATUS_FLAGGED = "flagged"
+    VIDEO_STATUS_ERROR = "error"
+
     video_url = db.Column(db.String(500), nullable=True)
+    video_status = db.Column(db.String(20), nullable=True)
     thumbnail_url = db.Column(db.String(500), nullable=True)
     genre = db.Column(db.String(100), nullable=True)
     # JSON array of tag strings: ["sci-fi", "mystery", "female-lead"]
@@ -107,6 +113,7 @@ class Campaign(db.Model):
             "percent_funded": self.percent_funded,
             "donor_count": self.donor_count,
             "video_url": self.video_url,
+            "video_status": self.video_status,
             "thumbnail_url": self.thumbnail_url,
             "genre": self.genre,
             "tags": self.tags or [],
