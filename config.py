@@ -25,11 +25,25 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "")
-    # Heroku/Railway returns postgres:// but SQLAlchemy needs postgresql://
+    # Railway returns postgres:// but SQLAlchemy needs postgresql://
     if SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace(
             "postgres://", "postgresql://", 1
         )
+
+    @classmethod
+    def validate(cls):
+        errors = []
+        if cls.SECRET_KEY in ("dev-secret-change-in-production", ""):
+            errors.append("SECRET_KEY must be set to a random string in production")
+        if cls.JWT_SECRET_KEY in ("jwt-secret-change-in-production", ""):
+            errors.append("JWT_SECRET_KEY must be set to a random string in production")
+        if not cls.STRIPE_SECRET_KEY:
+            errors.append("STRIPE_SECRET_KEY is not set")
+        if not cls.SQLALCHEMY_DATABASE_URI:
+            errors.append("DATABASE_URL is not set")
+        if errors:
+            raise RuntimeError("Production config errors:\n" + "\n".join(f"  - {e}" for e in errors))
 
 
 class TestingConfig(Config):
