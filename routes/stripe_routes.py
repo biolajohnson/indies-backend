@@ -105,6 +105,7 @@ def create_payment_intent():
     intent = s.PaymentIntent.create(
         amount=amount_cents,
         currency="usd",
+        automatic_payment_methods={"enabled": True},
         application_fee_amount=platform_fee_cents,
         transfer_data={"destination": filmmaker.stripe_account_id},
         metadata={
